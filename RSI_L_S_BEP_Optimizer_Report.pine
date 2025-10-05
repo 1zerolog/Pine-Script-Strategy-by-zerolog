@@ -121,27 +121,7 @@ for rsiLenOpt in rsiLenRange
 // ===================== Detaylı Sonuç Raporu =====================
 if barstate.islast
     // Ana optimizasyon sonuçları
-    mainLabel = '🎯 ADVANCED OPTIMIZATION RESULTS 🎯\n' +
-                '═══════════════════════════════════\n' +
-                '📊 Best Parameters:\n' +
-                '• Trail Stop: ' + str.tostring(bestTrail * 100, '#.##') + '%\n' +
-                '• Offset: ' + str.tostring(bestOffset * 100, '#.##') + '%\n' +
-                '• RSI Length: ' + str.tostring(bestRSILen) + '\n' +
-                '• RSI Overbought: ' + str.tostring(bestRSIOver) + '\n' +
-                '• RSI Oversold: ' + str.tostring(bestRSIUnder) + '\n' +
-                '═══════════════════════════════════\n' +
-                '💰 Performance:\n' +
-                '• Net Profit: $' + str.tostring(bestProfit, '#.##') + '\n' +
-                '• Total Trades: ' + str.tostring(bestTrades) + '\n' +
-                '• Win Rate: ' + str.tostring(bestWinRate, '#.##') + '%\n' +
-                '• Max Drawdown: ' + str.tostring(bestMaxDD, '#.##') + '%\n' +
-                '• Sharpe Ratio: ' + str.tostring(bestSharpe, '#.##') + '\n' +
-                '═══════════════════════════════════\n' +
-                '📈 Trade Breakdown:\n' +
-                '• Long Trades: ' + str.tostring(bestLongTrades) + '\n' +
-                '• Short Trades: ' + str.tostring(bestShortTrades) + '\n' +
-                '• Avg Win: $' + str.tostring(bestAvgWin, '#.##') + '\n' +
-                '• Avg Loss: $' + str.tostring(bestAvgLoss, '#.##')
+    mainLabel = '🎯 ADVANCED OPTIMIZATION RESULTS 🎯\n═══════════════════════════════════\n📊 Best Parameters:\n• Trail Stop: ' + str.tostring(bestTrail * 100, '#.##') + '%\n• Offset: ' + str.tostring(bestOffset * 100, '#.##') + '%\n• RSI Length: ' + str.tostring(bestRSILen) + '\n• RSI Overbought: ' + str.tostring(bestRSIOver) + '\n• RSI Oversold: ' + str.tostring(bestRSIUnder) + '\n═══════════════════════════════════\n💰 Performance:\n• Net Profit: $' + str.tostring(bestProfit, '#.##') + '\n• Total Trades: ' + str.tostring(bestTrades) + '\n• Win Rate: ' + str.tostring(bestWinRate, '#.##') + '%\n• Max Drawdown: ' + str.tostring(bestMaxDD, '#.##') + '%\n• Sharpe Ratio: ' + str.tostring(bestSharpe, '#.##') + '\n═══════════════════════════════════\n📈 Trade Breakdown:\n• Long Trades: ' + str.tostring(bestLongTrades) + '\n• Short Trades: ' + str.tostring(bestShortTrades) + '\n• Avg Win: $' + str.tostring(bestAvgWin, '#.##') + '\n• Avg Loss: $' + str.tostring(bestAvgLoss, '#.##')
     
     label.new(bar_index, high, mainLabel, 
               style = label.style_label_down, 
