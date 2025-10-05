@@ -98,8 +98,8 @@ for rsiLenOpt in rsiLenRange
                     currentSharpe = 0.0  // Sharpe ratio not available in Pine Script v6
                     currentLongTrades = 0  // Long trades count not available in Pine Script v6
                     currentShortTrades = 0  // Short trades count not available in Pine Script v6
-                    currentAvgWin = strategy.avg_win_trade
-                    currentAvgLoss = strategy.avg_loss_trade
+                    currentAvgWin = 0.0  // Average win not available in Pine Script v6
+                    currentAvgLoss = 0.0  // Average loss not available in Pine Script v6
                     
                     // En iyi performansı kontrol et (Net Profit'e göre)
                     if na(bestProfit) or currentProfit > bestProfit
@@ -121,7 +121,7 @@ for rsiLenOpt in rsiLenRange
 // ===================== Detaylı Sonuç Raporu =====================
 if barstate.islast
     // Ana optimizasyon sonuçları
-    mainLabel = '🎯 ADVANCED OPTIMIZATION RESULTS 🎯\n═══════════════════════════════════\n📊 Best Parameters:\n• Trail Stop: ' + str.tostring(bestTrail * 100, '#.##') + '%\n• Offset: ' + str.tostring(bestOffset * 100, '#.##') + '%\n• RSI Length: ' + str.tostring(bestRSILen) + '\n• RSI Overbought: ' + str.tostring(bestRSIOver) + '\n• RSI Oversold: ' + str.tostring(bestRSIUnder) + '\n═══════════════════════════════════\n💰 Performance:\n• Net Profit: $' + str.tostring(bestProfit, '#.##') + '\n• Total Trades: ' + str.tostring(bestTrades) + '\n• Win Rate: ' + str.tostring(bestWinRate, '#.##') + '%\n• Max Drawdown: ' + str.tostring(bestMaxDD, '#.##') + '%\n═══════════════════════════════════\n📈 Trade Analysis:\n• Avg Win: $' + str.tostring(bestAvgWin, '#.##') + '\n• Avg Loss: $' + str.tostring(bestAvgLoss, '#.##')
+    mainLabel = '🎯 ADVANCED OPTIMIZATION RESULTS 🎯\n═══════════════════════════════════\n📊 Best Parameters:\n• Trail Stop: ' + str.tostring(bestTrail * 100, '#.##') + '%\n• Offset: ' + str.tostring(bestOffset * 100, '#.##') + '%\n• RSI Length: ' + str.tostring(bestRSILen) + '\n• RSI Overbought: ' + str.tostring(bestRSIOver) + '\n• RSI Oversold: ' + str.tostring(bestRSIUnder) + '\n═══════════════════════════════════\n💰 Performance:\n• Net Profit: $' + str.tostring(bestProfit, '#.##') + '\n• Total Trades: ' + str.tostring(bestTrades) + '\n• Win Rate: ' + str.tostring(bestWinRate, '#.##') + '%\n• Max Drawdown: ' + str.tostring(bestMaxDD, '#.##') + '%\n═══════════════════════════════════\n📈 Optimization Complete!\nUse Strategy Tester for detailed analysis.'
     
     label.new(bar_index, high, mainLabel, 
               style = label.style_label_down, 
