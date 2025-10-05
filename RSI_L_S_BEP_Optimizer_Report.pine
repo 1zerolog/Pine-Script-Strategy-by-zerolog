@@ -21,65 +21,25 @@ offset_start = input.float(0.02, 'Offset Start %', step = 0.01) * 0.01
 offset_end = input.float(0.1, 'Offset End %', step = 0.01) * 0.01
 offset_step = input.float(0.01, 'Offset Step %', step = 0.01) * 0.01
 
-// ===================== Ek Optimizasyon Seçenekleri =====================
-enableRSIOptimization = input.bool(false, 'Enable RSI Optimization')
-rsiLenStart = input.int(5, 'RSI Length Start', minval=3, maxval=50)
-rsiLenEnd = input.int(20, 'RSI Length End', minval=3, maxval=50)
-rsiLenStep = input.int(1, 'RSI Length Step', minval=1)
-
-enableThresholdOptimization = input.bool(false, 'Enable RSI Threshold Optimization')
-rsiOverStart = input.int(60, 'RSI Overbought Start', minval=50, maxval=90)
-rsiOverEnd = input.int(80, 'RSI Overbought End', minval=50, maxval=90)
-rsiOverStep = input.int(2, 'RSI Overbought Step', minval=1)
-
-rsiUnderStart = input.int(20, 'RSI Oversold Start', minval=10, maxval=50)
-rsiUnderEnd = input.int(40, 'RSI Oversold End', minval=10, maxval=50)
-rsiUnderStep = input.int(2, 'RSI Oversold Step', minval=1)
-
 // ===================== Giriş Koşulları =====================
 longEntry = ta.crossover(rsiVal, rsiOver)
 shortEntry = ta.crossunder(rsiVal, rsiUnder)
 
-// ===================== Detaylı Optimizasyon Değişkenleri =====================
+// ===================== Optimizasyon Değişkenleri =====================
 var float bestProfit = na
 var float bestTrail = na
 var float bestOffset = na
 var int bestTrades = na
 var float bestWinRate = na
 var float bestMaxDD = na
-var float bestSharpe = na
-var int bestLongTrades = na
-var int bestShortTrades = na
-var float bestAvgWin = na
-var float bestAvgLoss = na
-var int bestRSILen = na
-var int bestRSIOver = na
-var int bestRSIUnder = na
 
-// ===================== Gelişmiş Optimizasyon Döngüsü =====================
-// RSI Length optimizasyonu - Pine Script v6 uyumlu
-rsiLenRange = enableRSIOptimization ? array.from(rsiLenStart, rsiLenStart + rsiLenStep, rsiLenStart + 2 * rsiLenStep, rsiLenStart + 3 * rsiLenStep, rsiLenStart + 4 * rsiLenStep, rsiLenStart + 5 * rsiLenStep, rsiLenStart + 6 * rsiLenStep, rsiLenStart + 7 * rsiLenStep, rsiLenStart + 8 * rsiLenStep, rsiLenStart + 9 * rsiLenStep, rsiLenStart + 10 * rsiLenStep, rsiLenStart + 11 * rsiLenStep, rsiLenStart + 12 * rsiLenStep, rsiLenStart + 13 * rsiLenStep, rsiLenStart + 14 * rsiLenStep, rsiLenStart + 15 * rsiLenStep) : array.from(rsiLen)
-rsiOverRange = enableThresholdOptimization ? array.from(rsiOverStart, rsiOverStart + rsiOverStep, rsiOverStart + 2 * rsiOverStep, rsiOverStart + 3 * rsiOverStep, rsiOverStart + 4 * rsiOverStep, rsiOverStart + 5 * rsiOverStep, rsiOverStart + 6 * rsiOverStep, rsiOverStart + 7 * rsiOverStep, rsiOverStart + 8 * rsiOverStep, rsiOverStart + 9 * rsiOverStep, rsiOverStart + 10 * rsiOverStep) : array.from(rsiOver)
-rsiUnderRange = enableThresholdOptimization ? array.from(rsiUnderStart, rsiUnderStart + rsiUnderStep, rsiUnderStart + 2 * rsiUnderStep, rsiUnderStart + 3 * rsiUnderStep, rsiUnderStart + 4 * rsiUnderStep, rsiUnderStart + 5 * rsiUnderStep, rsiUnderStart + 6 * rsiUnderStep, rsiUnderStart + 7 * rsiUnderStep, rsiUnderStart + 8 * rsiUnderStep, rsiUnderStart + 9 * rsiUnderStep, rsiUnderStart + 10 * rsiUnderStep) : array.from(rsiUnder)
-
-// Ana optimizasyon döngüsü - Pine Script v6 uyumlu
-// RSI optimizasyonu için basit döngü kullanıyoruz
-rsiLenOpt = enableRSIOptimization ? rsiLenStart : rsiLen
-rsiOverOpt = enableThresholdOptimization ? rsiOverStart : rsiOver
-rsiUnderOpt = enableThresholdOptimization ? rsiUnderStart : rsiUnder
-
-// Optimize edilmiş RSI değerleri
-rsiValOpt = ta.rsi(src, rsiLenOpt)
-longEntryOpt = ta.crossover(rsiValOpt, rsiOverOpt)
-shortEntryOpt = ta.crossunder(rsiValOpt, rsiUnderOpt)
-
-// Trail Stop ve Offset optimizasyonu
+// ===================== Trail Stop ve Offset Optimizasyonu =====================
 for tp = trail_start to trail_end by trail_step
     for off = offset_start to offset_end by offset_step
-        // Optimize edilmiş giriş sinyalleri
-        if longEntryOpt
+        // Giriş sinyalleri
+        if longEntry
             strategy.entry('LONG', strategy.long, qty = qty)
-        if shortEntryOpt
+        if shortEntry
             strategy.entry('SHORT', strategy.short, qty = qty)
 
         // Pozisyon yönetimi
@@ -93,18 +53,13 @@ for tp = trail_start to trail_end by trail_step
             offsetPts = strategy.position_avg_price * off / syminfo.mintick
             strategy.exit(id = 'S-Trail', trail_points = trailPts, trail_offset = offsetPts)
 
-        // ===================== Detaylı Performans Analizi =====================
+        // Performans analizi
         currentProfit = strategy.netprofit
         currentTrades = strategy.closedtrades
         currentWinRate = strategy.wintrades / math.max(currentTrades, 1) * 100
         currentMaxDD = strategy.max_drawdown
-        currentSharpe = 0.0  // Sharpe ratio not available in Pine Script v6
-        currentLongTrades = 0  // Long trades count not available in Pine Script v6
-        currentShortTrades = 0  // Short trades count not available in Pine Script v6
-        currentAvgWin = 0.0  // Average win not available in Pine Script v6
-        currentAvgLoss = 0.0  // Average loss not available in Pine Script v6
         
-        // En iyi performansı kontrol et (Net Profit'e göre)
+        // En iyi performansı kontrol et
         if na(bestProfit) or currentProfit > bestProfit
             bestProfit := currentProfit
             bestTrail := tp
@@ -112,19 +67,10 @@ for tp = trail_start to trail_end by trail_step
             bestTrades := currentTrades
             bestWinRate := currentWinRate
             bestMaxDD := currentMaxDD
-            bestSharpe := currentSharpe
-            bestLongTrades := currentLongTrades
-            bestShortTrades := currentShortTrades
-            bestAvgWin := currentAvgWin
-            bestAvgLoss := currentAvgLoss
-            bestRSILen := rsiLenOpt
-            bestRSIOver := rsiOverOpt
-            bestRSIUnder := rsiUnderOpt
 
-// ===================== Detaylı Sonuç Raporu =====================
+// ===================== Sonuç Raporu =====================
 if barstate.islast
-    // Ana optimizasyon sonuçları
-    mainLabel = '🎯 ADVANCED OPTIMIZATION RESULTS 🎯\n═══════════════════════════════════\n📊 Best Parameters:\n• Trail Stop: ' + str.tostring(bestTrail * 100, '#.##') + '%\n• Offset: ' + str.tostring(bestOffset * 100, '#.##') + '%\n• RSI Length: ' + str.tostring(bestRSILen) + '\n• RSI Overbought: ' + str.tostring(bestRSIOver) + '\n• RSI Oversold: ' + str.tostring(bestRSIUnder) + '\n═══════════════════════════════════\n💰 Performance:\n• Net Profit: $' + str.tostring(bestProfit, '#.##') + '\n• Total Trades: ' + str.tostring(bestTrades) + '\n• Win Rate: ' + str.tostring(bestWinRate, '#.##') + '%\n• Max Drawdown: ' + str.tostring(bestMaxDD, '#.##') + '%\n═══════════════════════════════════\n📈 Optimization Complete!\nUse Strategy Tester for detailed analysis.'
+    mainLabel = '🎯 TRAIL STOP OPTIMIZATION RESULTS 🎯\n═══════════════════════════════════\n📊 Best Parameters:\n• Trail Stop: ' + str.tostring(bestTrail * 100, '#.##') + '%\n• Offset: ' + str.tostring(bestOffset * 100, '#.##') + '%\n• RSI Length: ' + str.tostring(rsiLen) + '\n• RSI Overbought: ' + str.tostring(rsiOver) + '\n• RSI Oversold: ' + str.tostring(rsiUnder) + '\n═══════════════════════════════════\n💰 Performance:\n• Net Profit: $' + str.tostring(bestProfit, '#.##') + '\n• Total Trades: ' + str.tostring(bestTrades) + '\n• Win Rate: ' + str.tostring(bestWinRate, '#.##') + '%\n• Max Drawdown: ' + str.tostring(bestMaxDD, '#.##') + '%\n═══════════════════════════════════\n📈 Optimization Complete!\nUse Strategy Tester for detailed analysis.'
     
     label.new(bar_index, high, mainLabel, 
               style = label.style_label_down, 
