@@ -1,0 +1,59 @@
+//@version=5
+strategy('RSI_L_S_BEP_Optimizer_Report', overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100, initial_capital=100)
+
+// ===================== RSI Ayarları =====================
+src = input(close, 'RSI Source')
+rsiLen = input(9, 'RSI Length')
+rsiOver = input(68, 'RSI Overbought')
+rsiUnder = input(31, 'RSI Oversold')
+rsiVal = ta.rsi(src, rsiLen)
+
+// ===================== Leverage =====================
+leverage = input.int(1, 'Leverage (X)', minval=1)
+qty = math.round(strategy.equity * leverage / close)
+
+// ===================== Trail Stop Optimizasyon Parametreleri =====================
+trail_start = input.float(0.5, 'Trail Start %', step=0.1) * 0.01
+trail_end = input.float(2.0, 'Trail End %', step=0.1) * 0.01
+trail_step = input.float(0.1, 'Trail Step %', step=0.01) * 0.01
+
+offset_start = input.float(0.02, 'Offset Start %', step=0.01) * 0.01
+offset_end = input.float(0.1, 'Offset End %', step=0.01) * 0.01
+offset_step = input.float(0.01, 'Offset Step %', step=0.01) * 0.01
+
+// ===================== Giriş Koşulları =====================
+longEntry = ta.crossover(rsiVal, rsiOver)
+shortEntry = ta.crossunder(rsiVal, rsiUnder)
+
+var float bestProfit = na
+var float bestTrail = na
+var float bestOffset = na
+
+// ===================== Optimizasyon Döngüsü =====================
+for tp = trail_start to trail_end by trail_step
+    for off = offset_start to offset_end by offset_step
+        if longEntry
+            strategy.entry('LONG', strategy.long, qty=qty)
+        if shortEntry
+            strategy.entry('SHORT', strategy.short, qty=qty)
+        
+        if strategy.position_size > 0
+            trailPts = (strategy.position_avg_price * tp) / syminfo.mintick
+            offsetPts = (strategy.position_avg_price * off) / syminfo.mintick
+            strategy.exit(id='L-Trail', trail_points=trailPts, trail_offset=offsetPts)
+
+        if strategy.position_size < 0
+            trailPts = (strategy.position_avg_price * tp) / syminfo.mintick
+            offsetPts = (strategy.position_avg_price * off) / syminfo.mintick
+            strategy.exit(id='S-Trail', trail_points=trailPts, trail_offset=offsetPts)
+        
+        // Kar performansını kontrol et
+        currentProfit = strategy.netprofit
+        if na(bestProfit) or currentProfit > bestProfit
+            bestProfit := currentProfit
+            bestTrail := tp
+            bestOffset := off
+
+// ===================== Sonuç Etiketi =====================
+if barstate.islast
+    label.new(bar_index, high, 'Best TP: ' + str.tostring(bestTrail * 100, "#.##") + '%\nBest Offset: ' + str.tostring(bestOffset * 100, "#.##") + '%\nProfit: ' + str.tostring(bestProfit, "#.##"), style=label.style_label_down, color=color.yellow)
