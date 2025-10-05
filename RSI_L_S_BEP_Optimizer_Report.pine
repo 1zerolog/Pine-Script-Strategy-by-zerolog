@@ -21,40 +21,147 @@ offset_start = input.float(0.02, 'Offset Start %', step = 0.01) * 0.01
 offset_end = input.float(0.1, 'Offset End %', step = 0.01) * 0.01
 offset_step = input.float(0.01, 'Offset Step %', step = 0.01) * 0.01
 
+// ===================== Ek Optimizasyon Seçenekleri =====================
+enableRSIOptimization = input.bool(false, 'Enable RSI Optimization')
+rsiLenStart = input.int(5, 'RSI Length Start', minval=3, maxval=50)
+rsiLenEnd = input.int(20, 'RSI Length End', minval=3, maxval=50)
+rsiLenStep = input.int(1, 'RSI Length Step', minval=1)
+
+enableThresholdOptimization = input.bool(false, 'Enable RSI Threshold Optimization')
+rsiOverStart = input.int(60, 'RSI Overbought Start', minval=50, maxval=90)
+rsiOverEnd = input.int(80, 'RSI Overbought End', minval=50, maxval=90)
+rsiOverStep = input.int(2, 'RSI Overbought Step', minval=1)
+
+rsiUnderStart = input.int(20, 'RSI Oversold Start', minval=10, maxval=50)
+rsiUnderEnd = input.int(40, 'RSI Oversold End', minval=10, maxval=50)
+rsiUnderStep = input.int(2, 'RSI Oversold Step', minval=1)
+
 // ===================== Giriş Koşulları =====================
 longEntry = ta.crossover(rsiVal, rsiOver)
 shortEntry = ta.crossunder(rsiVal, rsiUnder)
 
+// ===================== Detaylı Optimizasyon Değişkenleri =====================
 var float bestProfit = na
 var float bestTrail = na
 var float bestOffset = na
+var int bestTrades = na
+var float bestWinRate = na
+var float bestMaxDD = na
+var float bestSharpe = na
+var int bestLongTrades = na
+var int bestShortTrades = na
+var float bestAvgWin = na
+var float bestAvgLoss = na
+var int bestRSILen = na
+var int bestRSIOver = na
+var int bestRSIUnder = na
 
-// ===================== Optimizasyon Döngüsü =====================
-for tp = trail_start to trail_end by trail_step
-    for off = offset_start to offset_end by offset_step
-        if longEntry
-            strategy.entry('LONG', strategy.long, qty = qty)
-        if shortEntry
-            strategy.entry('SHORT', strategy.short, qty = qty)
+// ===================== Gelişmiş Optimizasyon Döngüsü =====================
+// RSI Length optimizasyonu
+rsiLenRange = enableRSIOptimization ? range(rsiLenStart, rsiLenEnd, rsiLenStep) : array.from(rsiLen)
+rsiOverRange = enableThresholdOptimization ? range(rsiOverStart, rsiOverEnd, rsiOverStep) : array.from(rsiOver)
+rsiUnderRange = enableThresholdOptimization ? range(rsiUnderStart, rsiUnderEnd, rsiUnderStep) : array.from(rsiUnder)
 
-        if strategy.position_size > 0
-            trailPts = strategy.position_avg_price * tp / syminfo.mintick
-            offsetPts = strategy.position_avg_price * off / syminfo.mintick
-            strategy.exit(id = 'L-Trail', trail_points = trailPts, trail_offset = offsetPts)
+// Ana optimizasyon döngüsü
+for rsiLenOpt in rsiLenRange
+    for rsiOverOpt in rsiOverRange
+        for rsiUnderOpt in rsiUnderRange
+            // Optimize edilmiş RSI değerleri
+            rsiValOpt = ta.rsi(src, rsiLenOpt)
+            longEntryOpt = ta.crossover(rsiValOpt, rsiOverOpt)
+            shortEntryOpt = ta.crossunder(rsiValOpt, rsiUnderOpt)
+            
+            for tp = trail_start to trail_end by trail_step
+                for off = offset_start to offset_end by offset_step
+                    // Optimize edilmiş giriş sinyalleri
+                    if longEntryOpt
+                        strategy.entry('LONG', strategy.long, qty = qty)
+                    if shortEntryOpt
+                        strategy.entry('SHORT', strategy.short, qty = qty)
 
-        if strategy.position_size < 0
-            trailPts = strategy.position_avg_price * tp / syminfo.mintick
-            offsetPts = strategy.position_avg_price * off / syminfo.mintick
-            strategy.exit(id = 'S-Trail', trail_points = trailPts, trail_offset = offsetPts)
+                    // Pozisyon yönetimi
+                    if strategy.position_size > 0
+                        trailPts = strategy.position_avg_price * tp / syminfo.mintick
+                        offsetPts = strategy.position_avg_price * off / syminfo.mintick
+                        strategy.exit(id = 'L-Trail', trail_points = trailPts, trail_offset = offsetPts)
 
-        // Kar performansını kontrol et
-        currentProfit = strategy.netprofit
-        if na(bestProfit) or currentProfit > bestProfit
-            bestProfit := currentProfit
-            bestTrail := tp
-            bestOffset := off
-            bestOffset
+                    if strategy.position_size < 0
+                        trailPts = strategy.position_avg_price * tp / syminfo.mintick
+                        offsetPts = strategy.position_avg_price * off / syminfo.mintick
+                        strategy.exit(id = 'S-Trail', trail_points = trailPts, trail_offset = offsetPts)
 
-// ===================== Sonuç Etiketi =====================
+                    // ===================== Detaylı Performans Analizi =====================
+                    currentProfit = strategy.netprofit
+                    currentTrades = strategy.closedtrades
+                    currentWinRate = strategy.wintrades / math.max(currentTrades, 1) * 100
+                    currentMaxDD = strategy.max_drawdown
+                    currentSharpe = strategy.sharpe_ratio
+                    currentLongTrades = strategy.long_closedtrades
+                    currentShortTrades = strategy.short_closedtrades
+                    currentAvgWin = strategy.avg_win_trade
+                    currentAvgLoss = strategy.avg_loss_trade
+                    
+                    // En iyi performansı kontrol et (Net Profit'e göre)
+                    if na(bestProfit) or currentProfit > bestProfit
+                        bestProfit := currentProfit
+                        bestTrail := tp
+                        bestOffset := off
+                        bestTrades := currentTrades
+                        bestWinRate := currentWinRate
+                        bestMaxDD := currentMaxDD
+                        bestSharpe := currentSharpe
+                        bestLongTrades := currentLongTrades
+                        bestShortTrades := currentShortTrades
+                        bestAvgWin := currentAvgWin
+                        bestAvgLoss := currentAvgLoss
+                        bestRSILen := rsiLenOpt
+                        bestRSIOver := rsiOverOpt
+                        bestRSIUnder := rsiUnderOpt
+
+// ===================== Detaylı Sonuç Raporu =====================
 if barstate.islast
-    label.new(bar_index, high, 'Best TP: ' + str.tostring(bestTrail * 100, '#.##') + '%\nBest Offset: ' + str.tostring(bestOffset * 100, '#.##') + '%\nProfit: ' + str.tostring(bestProfit, '#.##'), style = label.style_label_down, color = color.yellow)
+    // Ana optimizasyon sonuçları
+    mainLabel = '🎯 ADVANCED OPTIMIZATION RESULTS 🎯\n' +
+                '═══════════════════════════════════\n' +
+                '📊 Best Parameters:\n' +
+                '• Trail Stop: ' + str.tostring(bestTrail * 100, '#.##') + '%\n' +
+                '• Offset: ' + str.tostring(bestOffset * 100, '#.##') + '%\n' +
+                '• RSI Length: ' + str.tostring(bestRSILen) + '\n' +
+                '• RSI Overbought: ' + str.tostring(bestRSIOver) + '\n' +
+                '• RSI Oversold: ' + str.tostring(bestRSIUnder) + '\n' +
+                '═══════════════════════════════════\n' +
+                '💰 Performance:\n' +
+                '• Net Profit: $' + str.tostring(bestProfit, '#.##') + '\n' +
+                '• Total Trades: ' + str.tostring(bestTrades) + '\n' +
+                '• Win Rate: ' + str.tostring(bestWinRate, '#.##') + '%\n' +
+                '• Max Drawdown: ' + str.tostring(bestMaxDD, '#.##') + '%\n' +
+                '• Sharpe Ratio: ' + str.tostring(bestSharpe, '#.##') + '\n' +
+                '═══════════════════════════════════\n' +
+                '📈 Trade Breakdown:\n' +
+                '• Long Trades: ' + str.tostring(bestLongTrades) + '\n' +
+                '• Short Trades: ' + str.tostring(bestShortTrades) + '\n' +
+                '• Avg Win: $' + str.tostring(bestAvgWin, '#.##') + '\n' +
+                '• Avg Loss: $' + str.tostring(bestAvgLoss, '#.##')
+    
+    label.new(bar_index, high, mainLabel, 
+              style = label.style_label_down, 
+              color = color.yellow, 
+              textcolor = color.black,
+              size = size.normal)
+    
+    // Performans uyarıları
+    if bestWinRate < 50
+        alertLabel = '⚠️ LOW WIN RATE WARNING ⚠️\nWin Rate: ' + str.tostring(bestWinRate, '#.##') + '%\nConsider adjusting parameters!'
+        label.new(bar_index, high * 0.95, alertLabel, 
+                  style = label.style_label_down, 
+                  color = color.red, 
+                  textcolor = color.white,
+                  size = size.small)
+    
+    if bestMaxDD > 20
+        ddLabel = '🚨 HIGH DRAWDOWN WARNING 🚨\nMax DD: ' + str.tostring(bestMaxDD, '#.##') + '%\nRisk too high!'
+        label.new(bar_index, high * 0.90, ddLabel, 
+                  style = label.style_label_down, 
+                  color = color.orange, 
+                  textcolor = color.white,
+                  size = size.small)
