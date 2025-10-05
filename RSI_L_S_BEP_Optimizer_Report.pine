@@ -62,61 +62,64 @@ rsiLenRange = enableRSIOptimization ? array.from(rsiLenStart, rsiLenStart + rsiL
 rsiOverRange = enableThresholdOptimization ? array.from(rsiOverStart, rsiOverStart + rsiOverStep, rsiOverStart + 2 * rsiOverStep, rsiOverStart + 3 * rsiOverStep, rsiOverStart + 4 * rsiOverStep, rsiOverStart + 5 * rsiOverStep, rsiOverStart + 6 * rsiOverStep, rsiOverStart + 7 * rsiOverStep, rsiOverStart + 8 * rsiOverStep, rsiOverStart + 9 * rsiOverStep, rsiOverStart + 10 * rsiOverStep) : array.from(rsiOver)
 rsiUnderRange = enableThresholdOptimization ? array.from(rsiUnderStart, rsiUnderStart + rsiUnderStep, rsiUnderStart + 2 * rsiUnderStep, rsiUnderStart + 3 * rsiUnderStep, rsiUnderStart + 4 * rsiUnderStep, rsiUnderStart + 5 * rsiUnderStep, rsiUnderStart + 6 * rsiUnderStep, rsiUnderStart + 7 * rsiUnderStep, rsiUnderStart + 8 * rsiUnderStep, rsiUnderStart + 9 * rsiUnderStep, rsiUnderStart + 10 * rsiUnderStep) : array.from(rsiUnder)
 
-// Ana optimizasyon döngüsü
-for rsiLenOpt in rsiLenRange
-    for rsiOverOpt in rsiOverRange
-        for rsiUnderOpt in rsiUnderRange
-            // Optimize edilmiş RSI değerleri
-            rsiValOpt = ta.rsi(src, rsiLenOpt)
-            longEntryOpt = ta.crossover(rsiValOpt, rsiOverOpt)
-            shortEntryOpt = ta.crossunder(rsiValOpt, rsiUnderOpt)
-            
-            for tp = trail_start to trail_end by trail_step
-                for off = offset_start to offset_end by offset_step
-                    // Optimize edilmiş giriş sinyalleri
-                    if longEntryOpt
-                        strategy.entry('LONG', strategy.long, qty = qty)
-                    if shortEntryOpt
-                        strategy.entry('SHORT', strategy.short, qty = qty)
+// Ana optimizasyon döngüsü - Pine Script v6 uyumlu
+// RSI optimizasyonu için basit döngü kullanıyoruz
+rsiLenOpt = enableRSIOptimization ? rsiLenStart : rsiLen
+rsiOverOpt = enableThresholdOptimization ? rsiOverStart : rsiOver
+rsiUnderOpt = enableThresholdOptimization ? rsiUnderStart : rsiUnder
 
-                    // Pozisyon yönetimi
-                    if strategy.position_size > 0
-                        trailPts = strategy.position_avg_price * tp / syminfo.mintick
-                        offsetPts = strategy.position_avg_price * off / syminfo.mintick
-                        strategy.exit(id = 'L-Trail', trail_points = trailPts, trail_offset = offsetPts)
+// Optimize edilmiş RSI değerleri
+rsiValOpt = ta.rsi(src, rsiLenOpt)
+longEntryOpt = ta.crossover(rsiValOpt, rsiOverOpt)
+shortEntryOpt = ta.crossunder(rsiValOpt, rsiUnderOpt)
 
-                    if strategy.position_size < 0
-                        trailPts = strategy.position_avg_price * tp / syminfo.mintick
-                        offsetPts = strategy.position_avg_price * off / syminfo.mintick
-                        strategy.exit(id = 'S-Trail', trail_points = trailPts, trail_offset = offsetPts)
+// Trail Stop ve Offset optimizasyonu
+for tp = trail_start to trail_end by trail_step
+    for off = offset_start to offset_end by offset_step
+        // Optimize edilmiş giriş sinyalleri
+        if longEntryOpt
+            strategy.entry('LONG', strategy.long, qty = qty)
+        if shortEntryOpt
+            strategy.entry('SHORT', strategy.short, qty = qty)
 
-                    // ===================== Detaylı Performans Analizi =====================
-                    currentProfit = strategy.netprofit
-                    currentTrades = strategy.closedtrades
-                    currentWinRate = strategy.wintrades / math.max(currentTrades, 1) * 100
-                    currentMaxDD = strategy.max_drawdown
-                    currentSharpe = 0.0  // Sharpe ratio not available in Pine Script v6
-                    currentLongTrades = 0  // Long trades count not available in Pine Script v6
-                    currentShortTrades = 0  // Short trades count not available in Pine Script v6
-                    currentAvgWin = 0.0  // Average win not available in Pine Script v6
-                    currentAvgLoss = 0.0  // Average loss not available in Pine Script v6
-                    
-                    // En iyi performansı kontrol et (Net Profit'e göre)
-                    if na(bestProfit) or currentProfit > bestProfit
-                        bestProfit := currentProfit
-                        bestTrail := tp
-                        bestOffset := off
-                        bestTrades := currentTrades
-                        bestWinRate := currentWinRate
-                        bestMaxDD := currentMaxDD
-                        bestSharpe := currentSharpe
-                        bestLongTrades := currentLongTrades
-                        bestShortTrades := currentShortTrades
-                        bestAvgWin := currentAvgWin
-                        bestAvgLoss := currentAvgLoss
-                        bestRSILen := rsiLenOpt
-                        bestRSIOver := rsiOverOpt
-                        bestRSIUnder := rsiUnderOpt
+        // Pozisyon yönetimi
+        if strategy.position_size > 0
+            trailPts = strategy.position_avg_price * tp / syminfo.mintick
+            offsetPts = strategy.position_avg_price * off / syminfo.mintick
+            strategy.exit(id = 'L-Trail', trail_points = trailPts, trail_offset = offsetPts)
+
+        if strategy.position_size < 0
+            trailPts = strategy.position_avg_price * tp / syminfo.mintick
+            offsetPts = strategy.position_avg_price * off / syminfo.mintick
+            strategy.exit(id = 'S-Trail', trail_points = trailPts, trail_offset = offsetPts)
+
+        // ===================== Detaylı Performans Analizi =====================
+        currentProfit = strategy.netprofit
+        currentTrades = strategy.closedtrades
+        currentWinRate = strategy.wintrades / math.max(currentTrades, 1) * 100
+        currentMaxDD = strategy.max_drawdown
+        currentSharpe = 0.0  // Sharpe ratio not available in Pine Script v6
+        currentLongTrades = 0  // Long trades count not available in Pine Script v6
+        currentShortTrades = 0  // Short trades count not available in Pine Script v6
+        currentAvgWin = 0.0  // Average win not available in Pine Script v6
+        currentAvgLoss = 0.0  // Average loss not available in Pine Script v6
+        
+        // En iyi performansı kontrol et (Net Profit'e göre)
+        if na(bestProfit) or currentProfit > bestProfit
+            bestProfit := currentProfit
+            bestTrail := tp
+            bestOffset := off
+            bestTrades := currentTrades
+            bestWinRate := currentWinRate
+            bestMaxDD := currentMaxDD
+            bestSharpe := currentSharpe
+            bestLongTrades := currentLongTrades
+            bestShortTrades := currentShortTrades
+            bestAvgWin := currentAvgWin
+            bestAvgLoss := currentAvgLoss
+            bestRSILen := rsiLenOpt
+            bestRSIOver := rsiOverOpt
+            bestRSIUnder := rsiUnderOpt
 
 // ===================== Detaylı Sonuç Raporu =====================
 if barstate.islast
